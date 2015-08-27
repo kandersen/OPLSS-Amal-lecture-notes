@@ -50,6 +50,7 @@
 \newcommand{\tuple}[1]{\ensuremath{\langle #1 \rangle}}
 \newcommand{\curly}[1]{\ensuremath{\mathcal{#1}}}
 
+\DeclareMathOperator{\Rel}{Rel}
 \DeclareMathOperator{\FTV}{FTV}
 \DeclareMathOperator{\dom}{dom}
 \DeclareMathOperator{\safe}{safe}
@@ -86,21 +87,25 @@
 
 \newcommand{\equivalence}[3]{\ensuremath{#1 \approx^{#2} #3}}
 \newcommand{\ctxeq}[2]{\equivalence{#1}{ctx}{#2}}
-\newcommand{\lreq}[2]{\equivalence{#1}{LR}{#2}}
+\newcommand{\lreq}[2]{\equivalence{#1}{ }{#2}}
 
 \newcommand{\pred}[2]{\ensuremath{\curly{#1}\sem{#2}}}
 \newcommand{\pres}[3]{\ensuremath{\curly{#1}_{#2}\sem{#3}}}
+\newcommand{\prep}[3]{\ensuremath{\curly{#1}\sem{#3}_{#2}}}
 
 \newcommand{\epred}[1]{\ensuremath{\pred{E}{#1}}}
 \newcommand{\epres}[2][k]{\ensuremath{\pres{E}{#1}{#2}}}
+\newcommand{\eprep}[2][\rho]{\prep{E}{#1}{#2}}
 
 \newcommand{\vpred}[1]{\ensuremath{\pred{V}{#1}}}
 \newcommand{\vpres}[2][k]{\ensuremath{\pres{V}{#1}{#2}}}
+\newcommand{\vprep}[2][\rho]{\prep{V}{#1}{#2}}
 
 \newcommand{\gpred}[1]{\ensuremath{\pred{G}{#1}}}
 \newcommand{\gpres}[2][k]{\ensuremath{\pres{G}{#1}{#2}}}
 
 \newcommand{\sub}[3]{\ensuremath{#1[^{#2}/_{#3}]}}
+\newcommand{\extsub}[3]{\ensuremath{#1 \lbrack #2 \mapsto #3 \rbrack}}
 
 \newcommand*{\circled}[1]{\tikz[baseline=(char.base)]{
             \node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
@@ -576,16 +581,82 @@ We do have (\ref{eq1}) that talks about the value interpretation for $\tau$, but
 
 
 \section*{Lecture 4 exercises}
-\subsection*{Prove the followinf free theorem}  
+\subsection*{Prove the following free theorem}  
 \begin{theorem}[Free Theorem (II)]
     If $\mtenv; \mtenv \vdash e : \forall \alpha. \; (\tarrow{(\tarrow{\tau}{\alpha})}{\alpha})$ and 
        $\mtenv; \mtenv \vdash k : \tarrow{\tau}{\tau_k}$ then
     \[
-      \mtenv; \mtenv \vdash \lreq{e[\tau_k] \; k}{k(e[\tau] \; \tlabs{x}{\tau}{x})} : \tau_k
+      \mtenv; \mtenv \vdash \lreq{e[\tau_k] \; k}{k\;(e[\tau] \; id)} : \tau_k
 %''\mtenv; \mtenv \vdash'' not in my notes
     \]
-  \end{theorem}
-%TODO
+    where id is $\tlabs{x}{\tau}{x}$
+\end{theorem}
+\begin{proof}
+  To show that the two expressions are equivalent we need to show three things:
+  \begin{enumerate}
+  \item $\mtenv;\mtenv \vdash e[\tau_k] \; k : \tau_k$
+  \item $\mtenv;\mtenv \vdash k\;(e[\tau] \; id)$
+  \item $\exists v_1,v_2. e[\tau_k] \; k  \evaltos v_1 \pand k\;(e[\tau] \; id) \evaltos v_2 \pand (v_1,v_2) \in \vprep[\emptyset]{\tau_k}$
+  \end{enumerate}
+The two expressions are clearly well-typed (the difficult part of this proof is not to show this, so accept the handwaving or verify it yourself), so it remains to show the third item. Keep this proof goal in mind as we proceed.
 
+Now, let us turn our attention to our two assumptions $\mtenv; \mtenv \vdash e : \forall \alpha. \; (\tarrow{(\tarrow{\tau}{\alpha})}{\alpha})$ and $\mtenv; \mtenv \vdash k : \tarrow{\tau}{\tau_k}$. From the fundamental property these give us that the two are related to themself:
+\newcommand{\ataa}{\ensuremath{\forall \alpha. \tarrow{(\tarrow{\tau}{\alpha})}{\alpha}}}
+\newcommand{\ttk}{\ensuremath{\tarrow{\tau}{\tau_k}}}
+\begin{align*}
+  & \mtenv ; \mtenv \vdash \lreq{e}{e} : \ataa \\
+  & \mtenv ; \mtenv \vdash \lreq{k}{k} : \ttk
+\end{align*}
+This gives us that $e$ evaluates to some value, say $F$, where $(F,F) \in \vprep[\emptyset]{\ttk}$. Which we can unfold to get:
+\newcommand{\taa}{\ensuremath{\tarrow{(\tarrow{\tau}{\alpha})}{\alpha}}}
+\[
+ \forall \tau_1,\tau_2,R\in \Rel[\tau_1,\tau_2]. (F[\tau_1],F[\tau_2]) \in \eprep[\extsub{\emptyset}{\alpha}{(\tau_1,\tau_2,R)}]{\taa}
+\]
+Let us for convenience write $\rho=\extsub{\emptyset}{\alpha}{(\tau_1,\tau_2,R)}$. We get something similar for $k$, but let us for now just take with us that $k$ evaluates to some value $k_\lambda$. To proceed we need to instantiate the above with two types and a relation. To determine what types and relation to use we look at what we want to prove. In the free theorem,  $e$ is instantiated with $\tau_k$ on the left side and $\tau$ on the right side, so we probably need to use those two types. When it comes to the relation we again let us inspire by the free theorem\footnote{It may not be easy to find the correct relation in the first try, but it is a good idea to either try something that seems plausible or leave it open and continue unfolding definitions until you get to something where you need $R$ and can see what constraints it needs to have.}:
+On the left side we just apply $e$, and it is the last thing we do. On the right side we first apply $e$, and then we give the result to $k$. So the value on the left side should be related to the value on the right side, when it has been applied to $k$. We end up with the following relation: 
+\[
+  R = \{(v_k,v) \vbar \exists v_k'. \; k \; v \evaltos v_k' \pand (v_k,v_k') \in \vprep[\emptyset]{\tau_k}\}
+\]
+The instantiation gives us that $(F[\tau_k],F[\tau]) \in \eprep[\rho]{\taa}$ which entails that $F[\tau_k]$ and $F[\tau]$ evaluate to some values:
+\begin{align*}
+  F[\tau_k] & \evaltos f_L \\
+  F[\tau] & \evaltos f_R
+\end{align*}
+where $(f_L,f_R) \in \vprep[\rho]{\taa}$. By definition of the value interpretation of the function type we then have
+\[
+  \forall (v_1,v_2) \in \vprep[\rho]{\tarrow{\tau}{\alpha}}. \; (f_L \; v_1, f_R \; v_2) \in \eprep[\rho]{\alpha}
+\]
+Assume for now that $(k,id) \in \vprep[\rho]{\tarrow{\tau}{\alpha}}$, then it must be the case that 
+\begin{align*}
+  f_L \; k & \evaltos v_1 \\
+  f_R \; id & \evaltos v_2
+\end{align*}
+where $(v_1,v_2) \in \vprep[\rho]{\alpha}$ which is equivalent to $(v_1,v_2) \in R$. Now let us take a step back and see what we have shown. We have shown that the following evaluation takes place:
+\begin{align*}
+  e[\tau_k]\; k & \evaltos F[\tau_k]\; k \\
+                & \evaltos f_L \; k \\
+                & \evaltos f_L \; k_\lambda \\
+                & \evaltos v_1
+\end{align*}
+Which shows the left equation of the equivalence evaluates to some vales. Further we have the evaluation
+\begin{align*}
+  e[\tau]\; id & \evaltos F[\tau] \; k \\
+               & \evaltos f_R \; k \\
+               & \evaltos f_R \; k_\lambda \\
+               & \evaltos v_2
+\end{align*}
+This shows that part of the right equation of the equivalence evaluates to a value, but it is not quite what we wanted. Luckily we defined our relation $R$ such that it can take us the rest of the way. We know that $(v_1,v_2) \in R$ which gives us that $k \; v_2 \evaltos v_2'$ for some $v_2'$ and $(v_1,v_2') \in \vprep[\emptyset]{\tau_k}$, so we end up with the evaluation
+\begin{align*}
+  k \; (e[\tau]\; id) & \evaltos k_\lambda \; (e[\tau]\; id) \\
+                      & \evaltos k_\lambda \; v_2 \\
+                      & \evaltos v_2'
+\end{align*}
+where $(v_1,v_2') \in \vprep[\emptyset]{\tau_k}$ which is exactly the result we wanted.
 
+We did, however, assume something under the way, so now it suffices to show $(k,id) \in \vprep[\rho]{\tarrow{\tau}{\alpha}}$. To do this suppose $(v_L,v_R) \in \vprep[\rho]{\tau}$ and then show $(k \; v_L, id \; v_R) \in \eprep{\alpha}$. To show this we need to show that $k \; v_L$ evaluates to some value, say $v_L'$, and that $id \; v_R$ evaluates to some value, say $v_R'$, where $(v_L',v_R') \in \vprep{\alpha} \equiv R$. As $id$ is the identity function we know that $id \; v_R$ evaluates to $v_R$ in one step. To move on we need to consider what the fundamental property gave us about $k$. We already had that $k$ evaluates to $k_\lambda$, but we also get that $(k,k) \in \eprep[\emptyset]{\tarrow{\tau}{\tau_k}}$ which means that $(k_\lambda,k_\lambda) \in \vprep[\emptyset]{\tarrow{\tau}{\tau_k}}$. If we unfold this we get:
+\[
+  \forall (v_1,v_2) \in \vprep[\emptyset]{\tau}. \; (k_\lambda \; v_1, k_\lambda \; v_2) \in \eprep[\emptyset]{\tau_k}
+\]
+To instantiate this we need something in $\vprep[\emptyset]{\tau}$, but all we got is $(v_L,v_R) \in \vprep[\rho]{\tau}$. We will prove as a lemma that because $\tau$ is closed $(v_L,v_R) \in \vprep[\rho]{\tau}$ implies $(v_L,v_R) \in \vprep[\emptyset]{\tau}$. So for now let us assume that this is true so we have $(v_L,v_R) \in \vprep[\emptyset]{\tau}$ which we instantiate the above with to get $(k_\lambda \; v_L, k_\lambda \; v_R) \in \eprep[\emptyset]{\tau_k}$. This gives us that $k_\lambda \; v_L$ evaluates to some value, say $v_L'$, and $k_\lambda \; v_R$ evaluates to some value, say $v_R'$, and that $(v_L',v_R') \in \vprep{\tau}$. This gives us one more of our goals namely that $k \; v_L$ evaluates to $v_L'$ so it remains to show $(v_L',v_R) \in R$. To do this we need to show two things, first we need to show $k \; v_r$ evaluates to some value which it does, it evaluates to $v_R'$. Second, we need to show that $v_L',v_R') \in \vprep[\emptyset]{\tau_k}$ which is the other result we just got, so we have the result we needed. There is now nothing left to show\footnote{Apart from the mentioned lemma.}, so we have proven the free theorem.
+\end{proof}
 \end{document}

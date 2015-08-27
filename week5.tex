@@ -1,7 +1,121 @@
-\section*{Lecture 3, Step-Indexing}
-This lecture was on extending the unary logical relation for type safety of simply typed lambda calculus to recursive types, introducing universal types, and finally a short introduction to contextual equivalence.
+\section*{Recursive Types and Step Indexing}
+\subsection*{A motivating introduction to recursive types}
+First consider the  following program in the \emph{untyped} lambda calculus:
+\[
+  \Omega = (\labs{x}{x \; x}) \; (\labs{x}{x \; x})
+\]
+The interested reader can now try to evaluate the above expression. After a $\beta$-reduction and a substitution we end up with $\Omega$ again, so the evaluation of this expression diverges. Moreover, it is not possible to assign a type to $\Omega$ (again the interested reader may try to verify this by attempting to assign a type). It can hardly come as a surprise that it cannot be assigned a type, as we previously proved that the simply typed lambda calculus is strongly normalizing so if we could assign $\Omega$ a type, then it would not diverge.
+
+To type $\Omega$ we need recursive types. If we are able to type $\Omega$, then we do not have strong normalization (as $\Omega$ is not strongly normalizing). With recursive types we can type structures that are inherently inductive such as lists, trees, and streams.  In an ML like language a declaration of a tree type would look like this:
+\begin{lstlisting}
+  type tree = Leaf
+            | Node of int * tree * tree
+\end{lstlisting}
+In Java we could define a tree class with an int field and fields for the sub trees:
+\begin{lstlisting}
+  class Tree {
+    int value;
+    Tree left, right;
+  }
+\end{lstlisting}
+So we can define trees in our programming languages, but we cannot define them in the lambda calculus. Let us try to find a reasonable definition for recursive types by considering what properties are needed to define trees. We want a type that can either be a node or a leaf. A leaf can be represented by unit (as it here does not carry any information), and a node is the product of an int and two nodes. We put the two together with the sum type, as it is:
+\[
+  tree = 1 + (int * tree * tree)
+\]
+This is what we want, but we cannot specify this. We try to define $tree$, but $tree$ appears on the right hand side, which is self-referential. Instead of writing $tree$ we use a type variable $\alpha$:
+\begin{align*}
+  \alpha &= 1 + (int \times \alpha \times \alpha) \\
+         &= 1 + (int \times (int \times \alpha \times \alpha) \times (int \times \alpha \times \alpha)) \\
+  &\vdots
+\end{align*}
+All the sides of the above equations are equal, and they are all trees. We could keep going and get an infinite system of equations. If we keep substituting the definition of $\alpha$ for $\alpha$ we keep getting bigger and bigger types. All of the types are trees, and all of them are finite. If we take the limit of this process, then we end up with an infinite tree, and that tree is the tree we conceptually have in our minds. So what we need is the fixed point of the above equation.
+
+Let us define a recursive function who's fixed point we want to find:
+\[
+F = \lambda \alpha :: type. 1 + (int \times \alpha \times \alpha)
+\]
+We want the fixed point which by definition is $t$ such that
+\[
+  t = F(t)
+\]
+So we want
+\[
+  tree = F(tree)
+\]
+The fixed point of this function is written:
+\[
+  \mu \alpha.\; F(\alpha)
+\]
+Here $\mu$ is a fixed point type constructor. As the above is the fixed point, then by definition it should be equal to $F$ applied to it:
+\[
+  \mu \alpha.\; F(\alpha) = F(\mu \alpha.\; F(\alpha))
+\]
+Now let us make this look a bit more like types by substituting $F(\alpha)$ for $\tau$. 
+\[
+  \mu \alpha.\; \tau = F(\mu \alpha.\; \tau) 
+\]
+The right hand side is really just $\tau$ with $\mu \alpha. \; \tau$ substituted with $\tau$:
+\[
+  \mu \alpha.\; \tau = \tau[\mu \alpha. \; \tau / \alpha]
+\]
+We are going to introduce the recursive type $\mu \alpha.\; \tau$ to our language. When we have a recursive type we can shift our view to an expanded version $\tau[\mu \alpha. \; \tau / \alpha]$ and contract back to the original type. Expanding the type is called $\unfold$ and contracting is is called $\fold$.
+\[
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={rectangle}]
+
+  \node[main node] (1) {$\mu\alpha.\; \tau$};
+  \node[main node] (2) [right of=1] {$\tau[\mu \alpha. \; \tau / \alpha]$};
+
+  \path[every node/.style={font=\sffamily\small}]
+    (1) edge [bend left] node [above] {$\unfold$} (2)
+    (2) edge [bend left] node [below] {$\fold$} (1);
+\end{tikzpicture}
+\]
+With recursive types in hand we can now define our tree type:
+\[
+  tree \eqdef \mu \alpha. \; 1 + (int \times \alpha \times \alpha)
+\]
+When we want to work with this, we would like to be able to get under the $\mu$. Say we have $e : tree$ that is an expression $e$ with type $tree$, then we want to be able to say whether it is a leaf or a node. To do so we unfold the type to get the type where $\alpha$ has been substituted with the definition of $tree$ and the outer $\mu\alpha.$ has been removed. With the outer $\mu\alpha.$ gone we can match on the sum type to find out whether it is a leaf or a node. When we are done working with the type we can fold it back to the original tree type.
+\[
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={rectangle}]
+
+  \node[main node] (1) {$tree=\mu\alpha.\; 1+(int \times \alpha \times \alpha)$};
+  \node[main node] (2) [right of=1,xshift=5cm] {$1+(int \times (\mu\alpha.\; 1+(int \times \alpha \times \alpha)) \times (\mu\alpha.\; 1+(int \times \alpha \times \alpha)))$};
+
+  \path[every node/.style={font=\sffamily\small}]
+    (1) edge [bend left=10] node [above] {$\unfold$} (2)
+    (2) edge [bend left=10] node [below] {$\fold$} (1);
+\end{tikzpicture}
+\]
+This kind of recursive types is called iso-recursive types, because there is an isomorphism between a $\mu\alpha. \; \tau$ and its unfolding $\tau[\mu\alpha.\; \tau / \alpha]$. 
 
 \subsection*{Simply typed lambda calculus extended with $\mu$}
+STLC extended with recursive types is defined as follows:
+\begin{align*}
+  \tau &::= \dots \vbar \mu \alpha. \; \tau \\
+  e    &::= \dots \vbar \fold \; e \vbar \unfold \; e \\
+  v    &::= \dots \vbar \fold \; v\\
+  E    &::= \dots \vbar \fold \; E \vbar \; \unfold \; E
+\end{align*}
+\[
+\unfold \; (\fold \; v) \evalto v
+\]
+\[
+\TFold \hspace{2cm} \TUnfold
+\]
+With this we could define the type of an integer list as:
+\[
+int\; list \eqdef \mu\alpha.\; 1 + (int \times \alpha)
+\]
+%TODO: Typing omega
+\begin{comment}
+\[
+  \Omega = (\tlabs{x}{\mu\alpha.\; \tarrow{\alpha}{\tau}}{(\unfold \; x) \; x}) 
+\]
+\end{comment}
+
+\subsection*{Step-indexing, logical relations for recursive types}
 In a naive first attempt to make the value interpretation we could write something like
 \[
   \vpred{\mu\alpha. \; \tau} = \{\fold \; v \vbar \unfold \; (\fold \; v) \in \epred{\sub{\tau}{\mu\alpha.\;\tau}{\alpha}} \}
@@ -126,7 +240,7 @@ Proof by induction over the typing derivation.
 \case{\TFold} \\~
 We need to show 
 \newcommand{\mat}{\ensuremath{\mu\alpha.\tau}}
-\[
+v\[
   \Gamma \models \fold \; e : \mat
 \]
 So suppose we have $k \geq 0$ and $\gamma \in \gpres{\mat}$, then we need to show $\gamma(\fold\; e) \in \epres{\mat}$ which amounts to showing $\fold\; \gamma(e) \in \epres{\mat}$.
@@ -147,135 +261,6 @@ The list example from the previous lecture used the sum type. Sums are a straigh
 \]
 We can use $k$ directly or $k$ decremented by one. It depends on whether we want casing to take up a step. Either way the definition is well-founded. 
 
-\subsection*{Universal Types}
-Now we shift focus from type safety and termination to program equivalence. To motivate the need for arguing about program equivalence we first introduce universal types.
-
-Say we have a function that sorts integer lists:
-\[
-  sortint \; : \; \tarrow{list \; int}{list \; int}
-\]
-$sortint$ takes a list of integers and returns a sorted version of that list. Say we now want a function that sorts lists of strings, then instead of implementing a separate function we could factor out the code responsible for sorting and have just one function. The type signature of such a generic sort function is:
-\[
-  sort \; : \; \forall \alpha.\; \tarrow{(list \; \alpha) \times (\tarrow{\alpha \times \alpha}{bool} )}{list \; \alpha}
-\]
-$sort$ takes a type, a list of elements of this type, and a comparison function that compares to elements of the type argument and returns a list sorted according to the comparison function. An example of an application of this function could be
-\[
-  sort \; [int] \; (3,7,5) \; <
-\]
-Whereas sort instantiated with the $string$ type, but given an integer list would not be a well typed instantiation.
-\[
-  sort \; [string] \; \cancelto{("a","c","b")}{(3,7,5)} \; string<
-\]
-Here the application with the list $(3,7,5)$ is not well typed, but if we instead use a list of strings, then it type checks. 
-
-We want to extend the simply typed lambda calculus with functions that abstract over types in the same way lambda abstractions, $\tlabs{x}{\tau}{e}$, abstract over terms. We do that by introducing a type abstraction:
-\[
-  \tLabs{e}
-\]
-This function abstracts over the type $\alpha$ which allows $e$ to depend on $\alpha$.
-
-\subsubsection*{System F (Simply Typed Lambda Calculus With Universal Types)}
-\begin{align*}
-  \tau &::= \dots \vbar \forall \alpha. \; \tau \\
-  e    &::= \dots \vbar \tLabs{e} \vbar e[\tau] \\
-  v    &::= \dots \vbar \tLabs{e}\\
-  E    &::= \dots \vbar E[\tau] 
-\end{align*}
-\[
-  (\tLabs{e})[\tau] \evalto e[\tau/\alpha]
-\]
-Type environment\footnote{We do not annotate $\alpha$ with a kind, as we only have one kind in this language.} (The type environment is assumed to consist of distinct type variables. For instance, the environment $\Delta,\alpha$ is only well formed if $\alpha \not\in \dom(\Delta)$).
-\[
-  \Delta ::= \mtenv \vbar \Delta,\; \alpha
-\]
-With the addition of type environments of type variables we our typing judgments now have the following form:
-\[
-  \Delta,\Gamma \vdash e : \tau
-\]
-We now need a notion of well-formed types. If $\tau$ is well formed with respect to $\Delta$, then we write:
-\[
-  \Delta \vdash \tau
-\]
-We do not include the formal rules here, but they amount to $\FTV(\tau) \subseteq \Delta$, where $\FTV(\tau)$ is the set of free type variables in $\tau$.
-
-We further introduce a notion of well formed environments. An environment is well formed if all the types that appear in the range of $\Gamma$ are well formed.
-\[
-  \Delta \vdash \Gamma \eqdef \forall x \in \dom(\Gamma). \; \Delta \vdash \Gamma(x)
-\]
-For any type judgment $\Delta,\Gamma \vdash e : \tau$ we have as an invariant that $\tau$ is well-formed in $\Delta$ and $\Gamma$ is well formed in $\Delta$. The old typing system modified to use the new form of the typing judgment looks like this:
-\[
-  \FTFalse
-\hspace{1cm}
-  \FTTrue
-\]
-\[
-  \FTVar
-\hspace{1cm}
-  \FTIf
-\]  
-\[
-  \FTAbs 
-\hspace{1cm}
-  \FTApp
-\]
-Notice that the only thing that has changed is that $\Delta$ has been added to the environment in the judgments. We further extend the typing rules with the following two rules to account for our new language constructs:
-\[
-  \FTtAbs
-\hspace{1cm}
-  \FTtApp
-\]
-\subsubsection*{Properties of System-F}
-In System-F certain types reveal the behavior of the functions with that type. Let us consider terms with the type $\forall \alpha.\; \tarrow{\alpha}{\alpha}$. Recall from the motivation in lecture 1 that this had to be the identity function. We can now phrase this as a theorem:
-\begin{theorem}
-  If $\mtenv ; \mtenv \vdash e : \forall \alpha. \; \tarrow{\alpha}{\alpha}$,\\ $\mtenv \vdash \tau$, and\\ $\mtenv; \mtenv \vdash v : \tau$,\\ then $e[\tau]\; v \evaltos v$
-\end{theorem}
-This is a free theorem in this language. Another free theorem that was mentioned in the motivation of lecture 1 was about expressions with type $\forall \alpha. \tarrow{\alpha}{bool}$. Here all expressions with this type had to be constant functions. We can also phrase this as a theorem
-\begin{theorem}
-  If $\mtenv \vdash \tau$, $\mtenv \vdash v_1 : \tau$,\\ and $\mtenv \vdash v_1 : \tau$,\\ then $\ctxeq{e[\tau] \; v_1}{e[\tau]\; v_2}$.
-\end{theorem}
-Or in a slightly more general fashion where we allow different types:
-\begin{theorem}
-  If $\mtenv \vdash \tau$, \\ $\mtenv \vdash \tau'$, \\$\mtenv \vdash v_1 : \tau$,\\ and $\mtenv \vdash v_1 : \tau'$,\\ then $\ctxeq{e[\tau]\; v_1}{e[\tau']\; v_2}$.
-\end{theorem}
-\footnote{We have not yet defined $\ctxeq{}{}$ so for now just treat it as the two programs are equivalent without thinking too much about what equivalence means.}We get these free theorems because the functions have no way of inspecting the argument as they do not know what type it is. As the function has to treat its argument as an unknown ``blob'' it has no choice but to return the same value every time.
-
-The question now is: ``how do we prove these free theorems?'' The two last theorems both talk about program equivalence which we prove using logical relations. The first theorem did not mention equivalence, but the proof technique of choice is still a logical relation.
-
-\subsection*{Contextual Equivalence}
-To define a contextual equivalence we first define the notion of a program context. A program context is a complete program with exactly one hole in it. It is defined as follows:
-\begin{align*}
-  C ::= &\;  [\cdot] \\
-        &\vbar \eif{C}{e}{e}  \\
-        &\vbar \eif{e}{C}{e} \\
-        &\vbar \eif{e}{e}{C} \\
-        &\vbar \tlabs{x}{\tau}{C} \\
-        &\vbar C \; e \\
-        &\vbar e \; C \\
-        &\vbar \tLabs{C} \\
-        &\vbar C[\tau]
-\end{align*}
-We need a notion of context typing. For simplicity we just introduce it for simply typed lambda calculus. The context typing is written as:
-\[
-C:\; (\Gamma \vdash \tau) \implies (\Gamma' \vdash \tau') \implies \Gamma \vdash e : \tau \implies \Gamma' \vdash C[e] : \tau'
-\]
-This means that for any expression $e$ of type $\tau$ under $\Gamma$ if we embed it into $C$, then the type of the embedding is $\tau'$ under $\Gamma'$.
-
-Informally we want contextual equivalence to say that no matter what program context we embed either of the two expressions in, it gives the same result. This is also called as observational equivalence as the program context is unable to observe any difference no matter what expression we embed in it. We can of course not plug an arbitrary term into the hole, so we annotate the equivalence with the type of the hole which means that the two contextual equivalent expressions have to have that type.
-\[
-  \Delta; \Gamma \vdash \ctxeq{e_1}{e_2} : \tau \eqdef \forall C.\; (\Delta ; \Gamma \vdash \tau ) \implies (\mtenv ; \mtenv \vdash \tau') \implies (C[e_1] \Downarrow v \iff C[e_2] \Downarrow v)
-\]
-This definition assumes that $e_1$ and $e_2$ has type $\tau$ under the specified contexts.
-
-Contextual equivalence is handy because we want to be able to reason about the equivalence of two implementations. Say we have two implementations of a stack, one is implemented using an array the other using a list. If we can show that the two implementations are contextual equivalent, then we can use the more efficient one over the less efficient one and know that the complete program will behave the same.
-
-In the next lecture we will introduce a logical relation such that
-\[
-  \Delta ; \Gamma \vdash \lreq{e_1}{e_2} : \tau \implies \text{contextual equivalence \ctxeq{}{}} 
-\]
-That is we want to show that the logical relation is sound with respect to contextual equivalence. 
-
-If we can prove the above soundness, then we can state our free theorems with $\lreq{}{}$ rather than $\ctxeq{}{}$ and get the same result if we can prove the logical equivalence. We would like to do this as it is difficult to directly prove two things are contextual equivalent. A direct proof has to talk about all possible program contexts which we could do using induction, but the lambda-abstraction case turns out to be difficult. This motivates the use of other proof methods where using a logical relation is one of them.
-
 \subsection*{Exercises}
 \begin{enumerate}
 \item Do the lambda and application case of the \emph{Fundamental Property} theorem.%Specify in what proof, probably fundemental property
@@ -285,9 +270,3 @@ If we can prove the above soundness, then we can state our free theorems with $\
 \]
 This will fail, but it is instructive to see how it fails.
 \end{enumerate}
-
-
-%induction on step index followed by inner induction on the type structure.
-%when an expression looks like it has type tau.
-\clearpage
-

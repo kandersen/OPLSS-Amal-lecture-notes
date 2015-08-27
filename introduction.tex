@@ -1,0 +1,94 @@
+\subsection*{Simply Typed Lambda Calculus (STLC)}
+The language we use to present logical predicates and relations is the simply typed lambda calculus. In the first section it will be used in its basic form. In the later sections the simply typed lambda calculus will be used as a base language so if it says that we extend with some construct, then it is the simply typed lambda calculus that we extend. The simply typed lambda calculus is defined as follows:\\
+\begin{tabular}{ r | l }
+  Types: & $\tau ::=  bool \vbar \tarrow{\tau}{\tau}$ \\
+  \hline
+  Terms: & $e    ::= x \vbar \true 
+                       \vbar \false       
+                       \vbar \eif{e}{e}{e} 
+                       \vbar \tlabs{x}{\tau }{e}
+                       \vbar e \; e$ \\
+  \hline
+  Values: & $v    ::= \true \vbar \false \vbar \tlabs{x}{\tau}{e}$ \\
+  \hline
+  Evaluation  & \multirow{2}{*}{$E    ::= [] \vbar \eif{E}{e}{e} \vbar E \; e \vbar v \; E$}\\
+  contexts: & \\
+  \hline
+  \multirow{4}{*}{Evaluations:}    
+                                   & $\eif{\true}{e_1}{e_2} \evalto e_1$ \\
+                                   & $\eif{\false}{e_1}{e_2} \evalto e_2$ \\
+                                   & $(\tlabs{x}{\tau}{e}) \; v \evalto \subst{e}{v}{x}$ \\
+                                   & $\inferrule*[]{e \evalto e'}
+                                                   {E[e] \evalto E[e']}$ \\
+  \hline
+  Typing & \multirow{2}{*}{$ \Gamma ::= \mtenv \vbar \Gamma , x : \tau$} \\
+  Contexts: & \\
+  \hline
+  \multirow{8}{*}{Typing rules:} & \\
+                                 & $\TFalse \hspace{1.2cm} \TTrue$ \\
+                                 & \\
+                                 & $\TVar \hspace{1.2cm} \TIf$ \\
+                                 & \\
+                                 & $\TAbs \hspace{1.2cm} \TApp$\\
+                                 & \\
+\end{tabular}\\
+For the typing contexts it is assumed that the binders are distinct. So if $x \in \dom(\Gamma)$, then $\Gamma , x : \tau$ is not a legal context.
+
+\subsection*{Logical Relations}
+Logical relations are used to prove properties about programs in a language. Logical relations are proof methods and can be used as an alternative to proving properties directly. Examples of properties one can show using logical relations are:
+\begin{itemize}
+\item Termination (Strong normalization)
+\item Type safety
+\item Equivalence of programs
+  \begin{itemize}
+  \item Correctness of programs
+  \item Representation independence
+  \item Parametricity and free theorems, e.g.,
+    \[
+    f: \forall \alpha. \; \tarrow{\alpha}{\alpha}
+    \]
+    The program cannot inspect $\alpha$ as it has no idea which type it will be, therefore $f$ must be identity function.
+    \[
+    \forall. \; \tarrow{int}{\alpha}
+    \]
+    A function with this type does not exist (the function would need to return something of type $\alpha$, but it only has something of type $int$ to work with so it cannot possibly return a value of the proper type).
+  \item Security-Typed Languages (for Information Flow Control (IFC))\\
+        Example: All types in the code snippet below are labeled with their security level. A type can be labeled with either $L$ for \emph{low} or $H$ for \emph{high}. We do not want any flow from variables with a \emph{high} labeled type to a variable with a \emph{low} labeled type. The following is an example of an insecure \emph{explicit flow} of information:
+        \begin{lstlisting}[escapeinside={@}{@}]
+  x : int@$^L$@
+  y : int@$^H$@
+  x = y    //This assignment is insecure.
+        \end{lstlisting}
+Further, information may leak through a \emph{side channel}. That is the value denoted by a variable with a \emph{low} labeled type depends on the value of a variable with a \emph{high} labeled type. If this is the case we may not have learned the secret value, but we may have learned some information about it. An example of a side channel:
+        \begin{lstlisting}[escapeinside={@}{@}]
+  x : int@$^L$@
+  y : int@$^H$@
+  if y > 0 then x = 0 else x = 1
+        \end{lstlisting}
+The above examples show undesired programs or parts of programs, but if we want to generally state behavior we do not want a program to show, then we state it as non-interference:
+\begin{align*}
+  & \vdash P : \tarrow{int^L \times int^H}{int^L} \\
+  & P(v_L,v_{1H}) \approx_L P(v_L,v_{2H})
+\end{align*}
+If we run $P$ with the same \emph{low} value and with two different \emph{high} values, then the \emph{low} result of the two runs of the program should be equal. That is the \emph{low} result does not depend on \emph{high} values.
+  \end{itemize}
+\end{itemize}
+\subsection*{Categories of Logical Relations}
+We can split logical relations into two logical relations and logical predicates. Logical predicates are unary and used usually used to show properties of a program. Logical relations are binary and are usually used to show equivalences:\\
+\begin{tabular}{l | l}
+  Logical Predicates     & Logical Relations    \\
+\hline
+  (Unary)                & (Binary)             \\
+  $P_\tau(e)$             & $R_\tau(e_1,e_2)$     \\
+  - One property         & - Program Equivalence\\ %\footnote{Was not in my notes.}
+  - Strong normalization & \\
+  - Type safety          & \\
+\end{tabular}
+The following describes some properties we in general want a logical \emph{predicate} to have. These properties can be generalized to logical relations.
+
+In general for a logical predicate, $P_\tau(e)$, we want an expression, $e$, accepted by this predicate to satisfy the following properties\footnote{Note: when we later want to prove type safety the well-typedness property is weakened to only require $e$ to be closed.}:
+\begin{enumerate}
+\item $\mtenv \vdash e : \tau$
+\item The property we wish $e$ to have. In this case it would be: $e$ is strongly normalizing.
+\item The condition is preserved by eliminating forms.
+\end{enumerate}
