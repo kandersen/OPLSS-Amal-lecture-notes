@@ -15,7 +15,7 @@ $sort$ takes a type, a list of elements of this type, and a comparison function 
 \]
 Whereas sort instantiated with the $string$ type, but given an integer list would not be a well typed instantiation.
 \[
-  sort \; [string] \; \cancelto{("a","c","b")}{(3,7,5)} \; string<
+  sort \; [string] \; \cancelto{("a","c","b")}{(3,7,5)} \; \text{string<}
 \]
 Here the application with the list $(3,7,5)$ is not well typed, but if we instead use a list of strings, then it type checks. 
 
@@ -39,7 +39,7 @@ Type environment\footnote{We do not annotate $\alpha$ with a kind, as we only ha
 \[
   \Delta ::= \mtenv \vbar \Delta,\; \alpha
 \]
-With the addition of type environments of type variables we our typing judgments now have the following form:
+With the addition of type environments of type variables our typing judgments now have the following form:
 \[
   \Delta,\Gamma \vdash e : \tau
 \]
@@ -106,6 +106,8 @@ To define a contextual equivalence we first define the notion of a program conte
         &\vbar C[\tau]
 \end{align*}
 We need a notion of context typing. For simplicity we just introduce it for simply typed lambda calculus. The context typing is written as:
+%TODO: Hmm, some way of making this clearer? Natural language or perhaps
+%an inference rule of some sort?
 \[
 C:\; (\Gamma \vdash \tau) \implies (\Gamma' \vdash \tau') \implies \Gamma \vdash e : \tau \implies \Gamma' \vdash C[e] : \tau'
 \]
@@ -118,6 +120,10 @@ Informally we want contextual equivalence to say that no matter what program con
 This definition assumes that $e_1$ and $e_2$ has type $\tau$ under the specified contexts.
 
 Contextual equivalence is handy because we want to be able to reason about the equivalence of two implementations. Say we have two implementations of a stack, one is implemented using an array the other using a list. If we can show that the two implementations are contextual equivalent, then we can use the more efficient one over the less efficient one and know that the complete program will behave the same.
+%TODO: perhaps also a word on how we could take the simpler of the two
+      %as ``specification'', and hence show correctness of a more
+      %efficient, fast or otherwise clever implementation _with
+      %respect to_ the specification?
 
 In the next lecture we will introduce a logical relation such that
 \[
@@ -152,7 +158,7 @@ The next type is $\forall \alpha. \; \tau$. When we define the value interpretat
   and $\mtenv \vdash v_1 : \tau'$, 
   then $\ctxeq{e[\tau]\; v_1}{e[\tau']\; v_2} : bool$.
 \end{theorem}
-There are some important points to notice in this free theorem. First of all, we want to be able to apply $\Lambda$-terms to different types, so in our value interpretation we will have to pick to different types. Further, normally we pick related expressions, so it would probably be a good idea to pick related types. We do, however, not have a notion of related types, and in the theorem there is no relation between the two types used, so relating them might not be a good idea after all. With these points in mind we can make a first attempt at defining the value interpretation of $\forall \alpha. \; \tau$:
+There are some important points to notice in this free theorem. First of all, we want to be able to apply $\Lambda$-terms to different types, so in our value interpretation we will have to pick two different types. Further, normally we pick related expressions, so it would probably be a good idea to pick related types. We do not, however, have a notion of related types, and in the theorem there is no relation between the two types used, so relating them might not be a good idea after all. With these points in mind we can make a first attempt at defining the value interpretation of $\forall \alpha. \; \tau$:
 \[
   \vpred{\forall \alpha. \; \tau} = \{(\tLabs{e_1}, \tLabs{e_2}) \vbar \forall \tau_1,\tau_2. \; (\subst{e_1}{\tau_1}{\alpha},\subst{e_2}{\tau_2}{\alpha}) \in \epred{\subst{\tau}{?}{\alpha}} \}
   \]
@@ -250,13 +256,13 @@ Now we have defined our logical relation the first thing we want to do is to pro
 \begin{fundamentalprop}[Fundamental Property]
   If $\Delta; \Gamma \vdash e : \tau$ then $\Delta; \Gamma \vdash \lreq{e}{e} : \tau$
 \end{fundamentalprop}
-This theorem may seem a bit mundane, but it is actually quite strong. In the definition of the logical relation, $\Delta$ and $\Gamma$ can be seen as maps of placeholders that needs to be replaced in the expression. So when we choose a $\rho$ and $\gamma$ we may pick different types and terms to put in the expression. Closing the expression of can then give us two very different programs. 
+This theorem may seem a bit mundane, but it is actually quite strong. In the definition of the logical relation, $\Delta$ and $\Gamma$ can be seen as maps of place holders that needs to be replaced in the expression. So when we choose a $\rho$ and $\gamma$ we may pick different types and terms to put in the expression. Closing the expression of can then give us two very different programs. 
 
 In some presentations this is also known as the parametricity lemma. It may even be stated with out the short-hand notation for equivalence we use here.
 
 We could prove the theorem directly by induction over the typing derivation, but we will instead prove it by means of compatibility lemmas.
-%''Parametricity'' \Delta; \Gamma <- Placeholders for input. When we close of the terms we get two different programs.
-%Prove directly via induction on typing judgement. One case per typing rule.
+%''Parametricity'' \Delta; \Gamma <- Place holders for input. When we close of the terms we get two different programs.
+%Prove directly via induction on typing judgment. One case per typing rule.
 \subsubsection*{Compatibility Lemmas}
 We state a compatibility for each of the typing rules we have. Each of the lemmas will correspond to a case in the induction proof of the Fundamental Property so the theorem will follow directly from the compatibility lemmas. We state the compatibility lemmas as rules to highlight the connection to the typing rules. The premises of the lemma are over the horizontal line, and the conclusion is below:
 \begin{enumerate}
@@ -346,7 +352,7 @@ From the fundamental property and the well-typedness of $e$ we know $\mtenv \vda
 We instantiate this with an empty $\rho$ and an empty $\gamma$ to get $(e,e) \in \eprep[\mt]{\aaa}$. From the definition of this we know that $e$ evaluates to some value $F$ and $(F,F) \in \vprep[\mt]{\aaa}$. As $F$ is a value of type \aaa{} we know $F=\tLabs{e_1}$ for some $e_1$. Now use the fact that $(F,F) \in \vprep[\mt]{\aaa}$ by instantiating it with the type $\tau$ twice and the relation $R=\{(v,v)\}$ to get 
 \newcommand{\env}{\ensuremath{\extsub{\mt}{\alpha}{(\tau,\tau,R)}}}
 \newcommand{\taa}{\ensuremath{\tarrow{\alpha}{\alpha}}}
-$(\subst{e_1}{\tau}{\alpha},\subst{e_1}{\tau}{\alpha})\in \eprep[\env]{\taa}$. We notice that this instantiation is alright as $R \in \Rel[\tau,\tau]$.
+$(\subst{e_1}{\tau}{\alpha},\subst{e_1}{\tau}{\alpha})\in \eprep[\env]{\taa}$. We notice that this instantiation is all right as $R \in \Rel[\tau,\tau]$.
 
 This step is an important part of a proof of any free theorem namely choosing the relation. Before we chose the relation we picked two types. We did this based on the theorem we want to show. In the theorem we instantiate $e$ with $\tau$, so we pick $\tau$. Likewise with the relation, in the theorem we give $v$ to the function with the domain $\alpha$, so we pick the singleton relation consisting of $(v,v)$. Picking the correct relation is what requires some work in the proof of a free theorem. The remaining work done in the proof is simply unfolding of definitions.
 

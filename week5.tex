@@ -130,7 +130,7 @@ To solve this issue we index the interpretation by a natural number, $k$, which 
 \[
   \vpres{\tau} = \{v \vbar \dots \}
 \]
-If $v$ belongs to the interpretation, then this is read as ``$v$ belongs to the interpretation of $\tau$ for $k$ steps.'' We interpret this in the following way; given a value that we run run for $k$ or fewer steps as in the value is used in some program context for fewer than $k$, then we will never notice that it does not have type $\tau$. If we use the same value in a program context that wants to run for more than $k$ steps, then we might notice that it does not have type $\tau$ which means that we might get stuck. This gives us an approximate guarantee.
+Hence, $v \in \vpres{\tau}$ is read as ``$v$ belongs to the interpretation of $\tau$ for $k$ steps.'' We interpret this in the following way: given a value that we run run for $k$ or fewer steps (as in the value is used in some program context for fewer than $k$ steps) then we will never notice that it does not have type $\tau$. If we use the same value in a program context that wants to run for more than $k$ steps, then we might notice that it does not have type $\tau$ which means that we might get stuck. This gives us an approximate guarantee.
 
 We use this as an inductive metric to make our definition well-founded, so we define the interpretation on induction on the step-index followed by an inner induction on the type structure. Let us start by adding the step-index to our existing value interpretation:
 \begin{align*}
@@ -163,7 +163,7 @@ We can now define the value interpretation of $\mu\alpha. \; \tau$:
 \[
   \vpres{\mu\alpha.\; \tau} = \{\fold \; v \vbar \forall j < k. \; v \in \vpres[j]{\sub{\tau}{\mu\alpha.\;\tau}{\alpha}} \}
 \]
-This definition is like the one we previously proposed, but with a step-index. This definition is well-founded because $j$ is required to be \emph{strictly} less than $k$ and as we define the interpretation on induction over the step-index this is indeed well founded. We do not define a value interpretation for type variables $\alpha$, as we have no polymorphism yet. The only place we have a type variable at the moment is in $\mu\alpha. \; \tau$, but in the interpretation we immediately close of the $\tau$ under the $\mu$, so we will never encounter a free type variable.
+This definition is like the one we previously proposed, but with a step-index. This definition is well-founded because $j$ is required to be \emph{strictly} less than $k$ and as we define the interpretation on induction over the step-index this is indeed well founded. We do not define a value interpretation for type variables $\alpha$, as we have no polymorphism yet. The only place we have a type variable at the moment is in $\mu\alpha. \; \tau$, but in the interpretation we immediately close off the $\tau$ under the $\mu$, so we will never encounter a free type variable.
 
 Finally, we define the expression interpretation:
 \[
@@ -235,7 +235,7 @@ assume $v \in \vpres{\mu\alpha. \; \tau}$ and $j \leq k$, we then need to show $
     \]
   \end{lemma}
 \end{comment}
-\begin{proof}[Proof (Fundemental Property)]
+\begin{proof}[Proof (Fundamental Property)]
 Proof by induction over the typing derivation.
 \case{\TFold} \\~
 We need to show 
