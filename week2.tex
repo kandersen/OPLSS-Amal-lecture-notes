@@ -18,7 +18,7 @@ We first try to prove the above property directly to see it fail.
 Induction on the structure of the typing derivation.
 \case{$\mtenv \vdash \true : bool$} this term has already terminated.
 \case{$\mtenv \vdash \false : bool$} same as for \true.
-\case{$\mtenv \vdash \eif{e}{e_1}{e_2} : \tau$} simple, but requires the use of canonical forms of bool.
+\case{$\mtenv \vdash \eif{e}{e_1}{e_2} : \tau$} simple, but requires the use of canonical forms of bool\footnote{See Pierce's Types and Programming Languages for more about canonical forms.}.
 \case{$\mtenv \vdash \tlabs{x}{\tau_1}{e}$ : \tarrow{\tau_1}{\tau_2}} it is a value already and it has terminated.
 \case{$ \TApp $} \\
 By the induction hypothesis we get $e_1 \Downarrow v_1$ and $e_2 \Downarrow v_2$. By the type of $e_1$ we conclude $e_1 \Downarrow \tlabs{x}{\tau_2}{e'}$. What we need to show is $e_1 \; e_2 \Downarrow$. We know $e_1 \; e_2$ takes the following steps:
@@ -65,7 +65,7 @@ Here $\gamma$ is a substitution, $\gamma = \{x_1 \mapsto v_1, \dots , x_n \mapst
 
 In English the theorem reads: If $e$ is well-typed with respect to some type $\tau$ and we have some closing substitution that satisfy the typing environment, then if we close of $e$ with $\gamma$, then this closed expression is in $\SNPred_\tau$.
 
-$\gamma \models \Gamma$ is read ``the substitution, $\gamma$, satisfies the type environment, $\Gamma$.'' It is defined as follows:
+$\gamma \models \Gamma$ is read ``the substitution $\gamma$ satisfies the type environment, $\Gamma$.'' It is defined as follows:
 \[
   \gamma \models \Gamma \eqdef \dom(\gamma) = \dom(\Gamma) \pand 
                  \forall x \in \dom(\Gamma). \; \SN{\Gamma(x)}{\gamma(x)}
@@ -156,7 +156,7 @@ Now consider the following evaluation:
                                        & \evalto \gamma(e)[v'/x] \equiv 
                                                    \gamma[x \mapsto v'](e)
 \end{align*}
-We already concluded that $e' \evaltos v'$ which corresponds to the first series of steps. We can then do a $\beta$-reduction to take the next step and finally we get something that is equivalent to $\gamma[x \mapsto v'](e)$. That is we have the evaluation
+We already concluded that $e' \evaltos v'$, which corresponds to the first series of steps. We can then do a $\beta$-reduction to take the next step and finally we get something that is equivalent to $\gamma[x \mapsto v'](e)$. That is we have the evaluation
 \[
 (\tlabs{x}{\tau_1}{\gamma(e)}) \; e' \evaltos \gamma[x \mapsto v'](e)
 \]
@@ -170,9 +170,9 @@ If we use \SN{\tau_2}{\gamma[x\mapsto v'](e)} with $(\tlabs{x}{\tau_1}{\gamma(e)
 \item Prove the substitution lemma.
 \item Go through the cases of ``\circled{a} Generalized'' shown here by yourself.
 \item Prove the if-case of ``\circled{a} Generalized''.
-\item Extend the language with pairs and do the proofs. 
+\item Extend the language with pairs and adjust the proofs. 
   \begin{enumerate}
-  \item See how the clauses, we generally wanted our logical predicate to have, play out when we extend the logical predicate. Do we need to add anything for the third clause or does it work out without putting anything there like we did with the $bool$ case.
+  \item See how the clauses, we generally wanted our logical predicate to have, play out when we extend the logical predicate. Do we need to add anything for the third clause or does it work out without putting anything there, like we did with the $bool$ case?
   \end{enumerate}
 \end{enumerate}
 \clearpage
@@ -188,7 +188,7 @@ Type safety for simply typed lambda calculus is stated as follows:
 \begin{stlctypesafety}[Type Safety for STLC]
   If $\mtenv \vdash e : \tau$ and $e \evaltos e'$ then $\val(e')$ or $\exists e''. \; e' \evalto e''$.
 \end{stlctypesafety}
-Traditionally type safety is proven with two lemmas, progress and preservation.
+Traditionally type safety is proven with two lemmas: progress and preservation.
 \begin{progress}[Progress]
   If $\mtenv \vdash e : \tau$ then $\val(e)$ or $\exists e'. \; e \evalto e'$.
 \end{progress}
@@ -202,7 +202,7 @@ Preservation is also known as \emph{subject reduction}. Progress and preservatio
 \subsection*{Type safety - using logical predicate}
 The notation will here be changed compared to the one from lecture 1. We define the logical predicate in two parts: a value interpretation and an expression interpretation. The value interpretation is a function from types to the power set of closed values:
 \[
-  \vpred{ } : \tarrow{type}{\curly{P}(ClosedVal)}
+  \vpred{-} : \tarrow{type}{\curly{P}(ClosedVal)}
 \]
 The value interpretation is defined as:
 \begin{align*}
@@ -213,7 +213,7 @@ We define the expression interpretation as:
 \[
   \epred{\tau} = \{e \vbar \forall e'. \; e \evaltos e' \pand \irred(e') \implies e' \in \curly{V}\sem{\tau} \}
 \]
-\footnote{Notice that neither \vpred{\tau} nor \epred{\tau} requires well-typedness. Normally this would be a part of the predicate, but as the goal is to prove type safety we do not want it as a part of the predicate. In fact, if we did include a well-typedness requirement, then we would end up having to prove preservation for some of the proofs to go through. We do, however, require the value interpretation to only contain closed values.}The predicate $\irred$ is defined as:
+Notice that neither \vpred{\tau} nor \epred{\tau} requires well-typedness. Normally this would be a part of the predicate, but as the goal is to prove type safety we do not want it as a part of the predicate. In fact, if we did include a well-typedness requirement, then we would end up having to prove preservation for some of the proofs to go through. We do, however, require the value interpretation to only contain closed values. The predicate $\irred$ is defined as:
 \[
   \irred(e) \eqdef \not\exists e'. \; e \evalto e'
 \]
@@ -231,7 +231,7 @@ We are now ready to prove type safety. Just like we did for strong normalization
 \[
   \circled{b} \quad e \in \epred{\tau} \implies \safe(e)
 \]
-Rather than proving \circled{a} directly we prove a more general theorem and get \circled{a} as a corollary. But we are not yet in a position to state the theorem. First we need to define define the interpretation of type environments:
+Rather than proving \circled{a} directly we prove a more general theorem and get \circled{a} as a corollary. But we are not yet in a position to state the theorem. First we need to define define the interpretation of environments:
 \begin{align*}
   \gpred{\mtenv} & = \{ \emptyset \} \\
   \gpred{\Gamma,x:\tau} & = \{\gamma[x \mapsto v] \vbar 

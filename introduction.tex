@@ -49,9 +49,9 @@ Logical relations are used to prove properties about programs in a language. Log
     \]
     The program cannot inspect $\alpha$ as it has no idea which type it will be, therefore $f$ must be identity function.
     \[
-    \forall. \; \tarrow{int}{\alpha}
+    \forall. \alpha \; \tarrow{int}{\alpha}
     \]
-    A function with this type does not exist (the function would need to return something of type $\alpha$, but it only has something of type $int$ to work with so it cannot possibly return a value of the proper type).
+    A function with this type cannot exist (the function would need to return something of type $\alpha$, but it only has something of type $int$ to work with so it cannot possibly return a value of the proper type).
   \item Security-Typed Languages (for Information Flow Control (IFC))\\
         Example: All types in the code snippet below are labeled with their security level. A type can be labeled with either $L$ for \emph{low} or $H$ for \emph{high}. We do not want any flow from variables with a \emph{high} labeled type to a variable with a \emph{low} labeled type. The following is an example of an insecure \emph{explicit flow} of information:
         \begin{lstlisting}[escapeinside={@}{@}]
@@ -74,7 +74,7 @@ If we run $P$ with the same \emph{low} value and with two different \emph{high} 
   \end{itemize}
 \end{itemize}
 \subsection*{Categories of Logical Relations}
-We can split logical relations into two logical relations and logical predicates. Logical predicates are unary and used usually used to show properties of a program. Logical relations are binary and are usually used to show equivalences:\\
+We can split logical relations into two: logical relations and logical predicates. Logical predicates are unary and used usually used to show properties of a program. Logical relations are binary and are usually used to show equivalences:\\
 \begin{tabular}{l | l}
   Logical Predicates     & Logical Relations    \\
 \hline
